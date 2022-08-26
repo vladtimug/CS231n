@@ -1,0 +1,100 @@
+Standford Computer Vision Course
+
+1. Lecture 1 - History & Background of the field
+	
+	1.1 People & Books:
+		David Marr - Vision
+		David Lowe
+
+
+	1.2 Problems to solve in vision:
+		1. Object Recognition
+		2. Object Segmentation - the task of grouping the pixels in meaningful areas
+
+		3. Face Detection
+			Ada Boost algorithm (2001)
+		4. Object Detection
+		5. Image Captioning
+		6. Action Classification
+
+
+	1.3 Techniques for early machine learning:
+		1. Support Vectors
+		2. Boosting
+		3. Graphical Models
+
+
+	1.4 Work to check:
+		1.  Pictorial Structure - Fischler & Elschlanger, 1973
+		2.  Generalized Cylinder - Brooks & Binford, 1979
+		3.  Edge Detecion - David Lowe, 1987
+		4.  Normalized Cut - Shi & Malik, 1997
+		5.  'SIFT' & Object Recognition - David Lowe, 1999 
+		6.  Face Detection Ada Boost Algorithm - Viola & Jones, 2001
+		7.  Histogram of Gradients - Dalal & Triggs, 2005
+		8.  Spatial Pyramid Matching - Lazebnik, Schimd & Ponce, 2006
+		9.  Deformable Part Model - Felzenswalb, McAllester, Ramanan, 2009
+		10. 
+
+
+	1.5 Datasets for training object recognition algorithms:
+		1. PASCAL Visual Object Challenge (20 obj categories)
+		2. IMAGENET (22k Categories and 14M Images)
+		3. CIFAR10
+
+http://cs231n.github.io/python-numpy-tutorial/
+
+
+2. Lecture 2 - Image Classification
+
+	2.1. Problems to tackle in CV:
+		- Viewpoint
+		- Ilumination
+		- Deformation
+		- Occlusion
+		- Background Clutter
+		- Interclass Variation
+
+	2.2. Methods to solve these problems:
+		- Data-Driven Approach
+			1. Collect a dataset of images and labels
+			2. Use Machine Learning to train a classifier
+			3. Evaluate the classifier on new images
+
+		- Classifiers - Learning Algorithms:
+
+			1. K Nearest Neighbour
+				1.1 Memorize all data and labels
+				1.2 Predict the label of the most similar training image
+
+				- Training techniques for classifiers:
+
+					1. Image comparison based on L1/Manhattan distance - rectamgular frame
+						- compare individual pixels in the image and compute the difference between the testing and training image
+					
+					2. Image comparison based on Euclidian distance - circular frame
+						- compare individual pixels in the image and compute the difference between the testing and training image
+
+						vision.stanford.edu/teaching/cs231n-demos/knn
+
+					- Settings Hyperparameters of the classifier is done by running the classifier on different data batches from the dataset. This implies 2 methods:
+									
+									1. Partition the data-set into 3 batches (train ~75%, validation ~15%, test ~10%). Use the train partition to train the classifier, the validation set to pick the best values for the hyperparameters and the test set to get an approximation of how the classifier will run on unseen data came from the wild
+
+									2. Cross-validation: Split data into folds, try each fold as validation and average results. (Useful for small data-sets but not used too frequently in deep learning)
+
+			2. Linear Classifier (useful to build neural networks)
+
+				Goal: Input an image and spit out a description of the image in a sentence.
+
+				- CNN handles the image
+				- RNN that handles the language
+				- Use CIFAR10
+
+				Parametric approach: 
+					1. Build a function f that takes in the image as 	X and a set of weights W - F(X,w) that spits 	out 10 numbers giving class scores about whats	 in the picture where the highest scores 			represents	 the highes probability of a 		correct prediction
+							f(x,W) = W * x + 
+
+https://cs231n.github.io/assignments2017/assignment1/
+
+3. Lecture 3 - Loss Functions and Optimization
