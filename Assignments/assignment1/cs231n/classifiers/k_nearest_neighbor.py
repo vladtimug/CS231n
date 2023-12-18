@@ -184,7 +184,7 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             
             if len(closest_y) > 1:
-                occurences = np.bincount(closest_y)                
+                occurences = np.bincount(closest_y)
                 y_pred[i] = np.argmax(occurences)
             else:
                 y_pred[i] = closest_y[0]
