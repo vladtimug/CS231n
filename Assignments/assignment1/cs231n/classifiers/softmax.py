@@ -39,17 +39,17 @@ def softmax_loss_naive(W, X, y, reg):
     for training_example_index in range(num_train):
         # Compute cross-entropy loss
         raw_scores = X[training_example_index].dot(W)
-        raw_scores -= np.max(raw_scores)    # Prevent numerical instabilit for Softmax computation
+        raw_scores -= np.max(raw_scores)    # Prevent numerical instability for Softmax computation
         softmax_scores = np.exp(raw_scores) / np.sum(np.exp(raw_scores))
         loss += -np.log(softmax_scores[y[training_example_index]])
-        
-        # Compute gradient. Mathematical explanation here: https://stackoverflow.com/questions/41663874/cs231n-how-to-calculate-gradient-for-softmax-loss-function
+
+        # Compute gradient. Mathematical explanation here: https://stackoverflow.com/a/67046905/13220395
         for dimension in range(num_dims):
             for class_index in range(num_classes):
                 if class_index == y[training_example_index]:
-                    dW[dimension,class_index] += X.T[dimension, training_example_index] * (softmax_scores[class_index] - 1)
+                    dW[dimension,class_index] += X[training_example_index, dimension] * (softmax_scores[class_index] - 1)
                 else:
-                    dW[dimension, class_index] += X.T[dimension, training_example_index] * softmax_scores[class_index]
+                    dW[dimension, class_index] += X[training_example_index, dimension] * softmax_scores[class_index]
     
     # Average loss & add regularization
     loss /= num_train
@@ -57,7 +57,7 @@ def softmax_loss_naive(W, X, y, reg):
     
     # Average gradient & add regularization
     dW /= num_train
-    dW += reg * W
+    dW += 2 * reg * W
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
@@ -92,7 +92,7 @@ def softmax_loss_vectorized(W, X, y, reg):
     dscores[range(num_train), y] -= 1
     dW = np.dot(X.T, dscores)
     dW /= num_train
-    dW += reg * W
+    dW += 2 * reg * W
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
