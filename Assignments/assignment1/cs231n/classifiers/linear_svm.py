@@ -46,7 +46,7 @@ def svm_loss_naive(W, X, y, reg):
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
-    dW += reg*W
+    dW += 2 * reg*W
     
     #############################################################################
     # TODO:                                                                     #
@@ -57,8 +57,6 @@ def svm_loss_naive(W, X, y, reg):
     # code above to compute the gradient.                                       #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    # https://mlxai.github.io/2017/01/06/vectorized-implementation-of-svm-loss-and-gradient-update.html
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -121,9 +119,8 @@ def svm_loss_vectorized(W, X, y, reg):
     binary[np.arange(num_train), y] = -row_sum.T
     dW = np.dot(X.T, binary)
     dW /= num_train
-    dW += reg*W
-    # https://mlxai.github.io/2017/01/06/vectorized-implementation-of-svm-loss-and-gradient-update.html
-    
+    dW += 2*reg*W
+        
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
