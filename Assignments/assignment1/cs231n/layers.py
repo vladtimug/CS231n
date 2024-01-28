@@ -28,8 +28,8 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     
-    input = x.reshape(x.shape[0], -1)
-    out = np.dot(input, w) + b
+    inp = x.reshape(x.shape[0], -1)
+    out = np.dot(inp, w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -155,7 +155,7 @@ def svm_loss(x, y):
     loss = x.T - x[np.arange(num_train), y] + 1
     loss[y, np.arange(num_train)] = 0
     dx = (loss>0).astype(int).T
-    loss = np.sum(loss, where= loss>0) / num_train
+    loss = np.sum(loss, where=loss>0) / num_train
     dx[np.arange(num_train), y] = np.sum(dx, axis=1) * (-1)
     dx = dx / num_train
     
@@ -190,14 +190,14 @@ def softmax_loss(x, y):
 
     num_train = x.shape[0]
     
-    x -= np.max(x)
-    ex = np.exp(x)
-    p = (ex.T / np.sum(ex, axis=1)).T
-    loss = -np.sum(np.log(p[np.arange(num_train), y])) / num_train
+    # x -= np.max(x)    # Subtracting the max value from all entries introduces gradient inaccuracy in this case
+    probabilities = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+    logits = -np.log(probabilities[range(num_train), y])
+    loss = np.sum(logits) / num_train
 
-    dx = np.copy(p)
-    dx[np.arange(num_train), y] -= 1
-    dx = dx / num_train
+    dx = probabilities.copy()
+    dx[range(num_train), y] -= 1
+    dx /= num_train
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################

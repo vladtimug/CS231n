@@ -91,9 +91,9 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        nonlinear_predictions1, l1_cache = affine_relu_forward(X, self.params['W1'], self.params['b1'])
-        linear_predictions2, l2_cache = affine_forward(nonlinear_predictions1, self.params['W2'], self.params['b2'])
-        scores = linear_predictions2
+        nonlinear_predictions, l1_cache = affine_relu_forward(X, self.params['W1'], self.params['b1'])
+        linear_predictions, l2_cache = affine_forward(nonlinear_predictions, self.params['W2'], self.params['b2'])
+        scores = linear_predictions
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -117,17 +117,22 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         
-        l_softmax, g_softmax = softmax_loss(scores, y)
-        l_softmax += 0.5 * self.reg * (np.sum(self.params['W1'] ** 2) + np.sum(self.params['W2'] ** 2))
-        l2_dx, l2_dw, l2_db = affine_backward(g_softmax, l2_cache)
-        l1_dx, l1_dw, l1_db = affine_relu_backward(l2_dx, l1_cache)
+        # Compute data loss and gradient of the loss wrt to the scores
+        loss, dscores = softmax_loss(scores, y)
+
+        # Compute final objective as sum between data loss and regularization loss
+        loss += 0.5 * self.reg * (np.sum(self.params['W1'] ** 2) + np.sum(self.params['W2'] ** 2))
         
-        grads['W1'] = l1_dw + self.reg * self.params['W1']
-        grads['b1'] = l1_db
+        # Compute loss gradient wrt layer 2
+        l2_dx, l2_dw, l2_db = affine_backward(dscores, l2_cache)
         grads['W2'] = l2_dw + self.reg * self.params['W2']
         grads['b2'] = l2_db
         
-        loss = l_softmax
+        # Compute loss gradient wrt to layer 1
+        _, l1_dw, l1_db = affine_relu_backward(l2_dx, l1_cache)        
+        grads['W1'] = l1_dw + self.reg * self.params['W1']
+        grads['b1'] = l1_db
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
