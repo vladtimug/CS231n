@@ -45,10 +45,15 @@ def sgd(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    w += -config['learning_rate'] * dw
+    param_scale = np.linalg.norm(w.ravel())
+
+    update = -config['learning_rate'] * dw
+    update_scale = np.linalg.norm(update.ravel())
+    
+    w += update
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    return w, config
+    return w, config,  update_scale/param_scale

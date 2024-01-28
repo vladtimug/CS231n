@@ -159,6 +159,7 @@ class Solver(object):
         self.loss_history = []
         self.train_acc_history = []
         self.val_acc_history = []
+        self.param_update_ratios = {}
 
         # Make a deep copy of the optim_config for each parameter
         self.optim_configs = {}
@@ -185,7 +186,8 @@ class Solver(object):
         for p, w in self.model.params.items():
             dw = grads[p]
             config = self.optim_configs[p]
-            next_w, next_config = self.update_rule(w, dw, config)
+            next_w, next_config, param_update_ratio = self.update_rule(w, dw, config)
+            self.param_update_ratios[p] = param_update_ratio
             self.model.params[p] = next_w
             self.optim_configs[p] = next_config
 
