@@ -25,8 +25,7 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    input = x.reshape(x.shape[0], -1)
-    out = np.dot(input, w) + b
+    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -52,17 +51,13 @@ def affine_backward(dout, cache):
     - db: Gradient with respect to b, of shape (M,)
     """
     x, w, b = cache
-
     dx, dw, db = None, None, None
     ###########################################################################
     # TODO: Copy over your solution from Assignment 1.                        #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    inp = x.reshape((x.shape[0], -1))
-    dx = np.dot(dout, w.T).reshape(x.shape)     # Demonstrated here: http://cs231n.stanford.edu/handouts/linear-backprop.pdf
-    dw = np.dot(inp.T, dout)    # Demonstrated here: http://cs231n.stanford.edu/handouts/linear-backprop.pdf
-    db = np.sum(dout, axis=0)
+    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -87,7 +82,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    out = np.maximum(0, x)
+    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -113,8 +108,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    dx = np.copy(dout)
-    dx[x<=0] = 0
+    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -143,15 +137,7 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    num_train = x.shape[0]
-
-    ex = np.exp(x)
-    p = (ex.T / np.sum(ex, axis=1)).T
-    loss = -np.sum(np.log(p[np.arange(num_train), y])) / num_train
-
-    dx = np.copy(p)
-    dx[np.arange(num_train), y] -= 1
-    dx = dx / num_train
+    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -229,25 +215,9 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # might prove to be helpful.                                          #
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        
-        # Step 1: Compute minibatch statistics
-        sample_mean = np.mean(X, axis=0)
-        sample_var = np.var(X, axis=0)
-        
-        running_mean = momentum * running_mean + (1 - momentum) * sample_mean
-        running_var = momentum * running_var + (1 - momentum) * sample_var
-        
-        # Step 2: Normalize incoming data using computed statistics
-        centered_minibatch = X - sample_mean
-        minibatch_std = np.sqrt(sample_var + eps)
-        normalized_activations = centered_minibatch / minibatch_std
-        
-        # Step 3: Scale and shift the normalized data using gamma and beta (scale and variance)
-        out = normalized_activations * gamma + beta
-        
-        # Step 4: Store any params necessary for the backward pass
-        cache = (normalized_activations, centered_minibatch, minibatch_std, gamma)
-        
+
+        pass
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -261,13 +231,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        # Step 1: Normalize data using running mean and variance
-        centered_minibatch = X - running_mean
-        minibatch_std = np.sqrt(running_var + eps)
-        normalized_activations = centered_minibatch / minibatch_std
-        
-        # Step 2: Scale and shift the normalized data using gamma and beta (scale and variance)
-        out = normalized_activations * gamma + beta
+        pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -466,13 +430,9 @@ def dropout_forward(x, dropout_param):
         # Store the dropout mask in the mask variable.                        #
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        
-        # Step 1: Create dropout mask and scale over all dimensions
-        mask = (np.random.randn(*x.shape) < p) / p
-        
-        # Step 2: Apply drouput mask to layer
-        out = x * mask
-        
+
+        pass
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -483,7 +443,7 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        out = x
+        pass
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################

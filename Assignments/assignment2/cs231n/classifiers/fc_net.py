@@ -35,6 +35,7 @@ class FullyConnectedNet(object):
         seed=None,
     ):
         """Initialize a new FullyConnectedNet.
+
         Inputs:
         - hidden_dims: A list of integers giving the size of each hidden layer.
         - input_dim: An integer giving the size of the input.
@@ -58,6 +59,7 @@ class FullyConnectedNet(object):
         self.num_layers = 1 + len(hidden_dims)
         self.dtype = dtype
         self.params = {}
+
         ############################################################################
         # TODO: Initialize the parameters of the network, storing all values in    #
         # the self.params dictionary. Store weights and biases for the first layer #
@@ -71,64 +73,34 @@ class FullyConnectedNet(object):
         # parameters should be initialized to zeros.                               #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        
-        model_dims = hidden_dims.copy()
-        model_dims.append(num_classes)
-        for layer_id, layer_size in zip(range(self.num_layers), model_dims):
-            layer_index = layer_id + 1
-            # print(f'Layer id:{layer_index}')
-            # print(f'Layer size: {layer_size}')
-            weights_id = 'W' + str(layer_index)
-            biases_id = 'b' + str(layer_index)
-            
-            if layer_index == 1:
-                self.params[weights_id] = weight_scale * np.random.randn(input_dim, layer_size)
-                self.params[biases_id] = np.zeros(layer_size)
-                # print(f'First Layer Weights: {self.params[weightsId].shape}')
-            else:
-                self.params[weights_id] = weight_scale * np.random.randn(prev_layer_size, layer_size)
-                self.params[biases_id] = np.zeros(layer_size)
-                # print(f'Layer {layer_index} Weights: {self.params[weightsId].shape}')
-                
-            
-            if self.normalization != None:
-                if self.normalization == 'batchnorm':
-                    batchnorm_scale_id = 'gamma' + str(layer_index)
-                    batchnorm_shift_id = 'beta' + str(layer_index)
-                    self.params[batchnorm_scale_id] = np.ones(layer_size) 
-                    self.params[batchnorm_shift_id] = np.zeros(layer_size)
-                elif self.normalization == 'layernorm':
-                    # TODO Implement logic for layernorm
-                    pass
-            
-            prev_layer_size = layer_size
-            
+
+        pass
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
+
         # When using dropout we need to pass a dropout_param dictionary to each
         # dropout layer so that the layer knows the dropout probability and the mode
         # (train / test). You can pass the same dropout_param to each dropout layer.
-        
         self.dropout_param = {}
         if self.use_dropout:
             self.dropout_param = {"mode": "train", "p": dropout_keep_ratio}
             if seed is not None:
                 self.dropout_param["seed"] = seed
-        
+
         # With batch normalization we need to keep track of running means and
         # variances, so we need to pass a special bn_param object to each batch
         # normalization layer. You should pass self.bn_params[0] to the forward pass
         # of the first batch normalization layer, self.bn_params[1] to the forward
         # pass of the second batch normalization layer, etc.
-        
         self.bn_params = []
         if self.normalization == "batchnorm":
             self.bn_params = [{"mode": "train"} for i in range(self.num_layers - 1)]
         if self.normalization == "layernorm":
             self.bn_params = [{} for i in range(self.num_layers - 1)]
-        
+
         # Cast all parameters to the correct datatype.
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
@@ -162,7 +134,6 @@ class FullyConnectedNet(object):
             for bn_param in self.bn_params:
                 bn_param["mode"] = mode
         scores = None
-        
         ############################################################################
         # TODO: Implement the forward pass for the fully connected net, computing  #
         # the class scores for X and storing them in the scores variable.          #
@@ -176,37 +147,9 @@ class FullyConnectedNet(object):
         # layer, etc.                                                              #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        
-        forward_pass_layers_cache = {}
-        for layer_id in range(self.num_layers):
-            layer_index = layer_id +1
-            weights_id = 'W' + str(layer_index)
-            biases_id = 'b' + str(layer_index)
-            layer_cache_id = 'l' + str(layer_index)
-            if layer_index == 1:
-                scores, layer_cache = affine_forward(X, self.params[weights_id], self.params[biases_id])
-                forward_pass_layers_cache[layer_cache_id] = layer_cache
-            else:
-                scores, layer_cache = affine_forward(scores, self.params[weights_id], self.params[biases_id])
-                forward_pass_layers_cache[layer_cache_id] = layer_cache
-            
-            # if self.use_dropout:
-            #     scores, layer_cache = dropout_forward(scores, self.dropout_param)
-            
-            # if self.normalization != None:
-            #     layer_index = (i-2)/2
-            #     layer_number = layer_index + 1
-            #     if self.normalization == 'batchnorm':
-            #         scaleId = 'gamma' + str(layer_number)
-            #         shiftId = 'beta' + str(layer_number)
-            #         scores, layer_cache = batchnorm_forward(scores, self.params[scaleId], self.params[shiftId], self.bn_params[layer_index])
-            #     elif self.normalization == 'layernorm':
-            #         # TODO Implement layernorm_forward in layers.py
-            #         pass
-            
-            
-            
-            
+
+        pass
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -231,47 +174,9 @@ class FullyConnectedNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-        
-        # Step 1: Compute loss (error between prediction and ground truth)
-        loss, loss_grads = softmax_loss(scores, y)
-        
-        # Step 2: Compute regularization term and add it to the loss
-        parameter_regularization = 0
-        for layer_id in range(self.num_layers):
-            layer_index = layer_id + 1
-            weightsId = 'W' + str(layer_index)
-            parameter_regularization += np.sum(self.params[weightsId] ** 2)
-        
-        loss += 0.5 * self.reg * parameter_regularization
-        
-        # Step 3: Compute gradients for all layers
-        for layer_index in range(self.num_layers,0,-1):
-            weights_id = 'W' + str(layer_index)
-            biases_id = 'b' + str(layer_index)
-            layer_cache_id = 'l' + str(layer_index)
-            
-            if layer_index == self.num_layers:
-                dx, dw, db = affine_backward(loss_grads, forward_pass_layers_cache[layer_cache_id])
-            else:
-                dx, dw, db = affine_backward(dx, forward_pass_layers_cache[layer_cache_id])
-            
-            grads[weights_id] = dw + self.reg * self.params[weights_id]
-            grads[biases_id] = db
-            
-            # if self.use_dropout:
-            #     # TODO Implement backward_dropout
-            
-            # if self.normalization != None:
-            #     layer_index = (i-2)/2
-            #     layer_number = layer_index + 1
-            #     if self.normalization == 'batchnorm':
-            #         scaleId = 'gamma' + str(layer_number)
-            #         shiftId = 'beta' + str(layer_number)
-            #         # TODO Implement batchnorm_backward in layers.py
-            #     elif self.normalization == 'layernorm':
-            #         # TODO Implement layernorm_forward in layers.py
-            #         pass
-        
+
+        pass
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #

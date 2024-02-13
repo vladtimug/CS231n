@@ -3,7 +3,7 @@ import os
 import subprocess
 
 try:
-    from PyPDF2 import PdfFileMerger
+    from PyPDF2 import PdfMerger
 
     MERGE = True
 except ImportError:
@@ -11,7 +11,7 @@ except ImportError:
     MERGE = False
 
 
-def main(files):
+def main(files, pdf_name):
     os_args = [
         "jupyter",
         "nbconvert",
@@ -26,10 +26,10 @@ def main(files):
         print("Created PDF {}.".format(f))
     if MERGE:
         pdfs = [f.split(".")[0] + ".pdf" for f in files]
-        merger = PdfFileMerger()
+        merger = PdfMerger()
         for pdf in pdfs:
             merger.append(pdf)
-        merger.write("assignment.pdf")
+        merger.write(pdf_name)
         merger.close()
         for pdf in pdfs:
             os.remove(pdf)
@@ -40,5 +40,6 @@ if __name__ == "__main__":
     # We pass in a explicit notebook arg so that we can provide an ordered list
     # and produce an ordered PDF.
     parser.add_argument("--notebooks", type=str, nargs="+", required=True)
+    parser.add_argument("--pdf_filename", type=str, required=True)
     args = parser.parse_args()
-    main(args.notebooks)
+    main(args.notebooks, args.pdf_filename)

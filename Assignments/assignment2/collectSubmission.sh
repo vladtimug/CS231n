@@ -20,14 +20,14 @@ NOTEBOOKS=(
 	"Dropout.ipynb"
 	"ConvolutionalNetworks.ipynb"
 	"PyTorch.ipynb"
-	"TensorFlow.ipynb"
 )
 
 FILES=( "${CODE[@]}" "${NOTEBOOKS[@]}" )
 
 LOCAL_DIR=`pwd`
 ASSIGNMENT_NO=2
-ZIP_FILENAME="a2.zip"
+ZIP_FILENAME="a2_code_submission.zip"
+PDF_FILENAME="a2_inline_submission.pdf"
 
 C_R="\e[31m"
 C_G="\e[32m"
@@ -47,6 +47,6 @@ rm -f ${ZIP_FILENAME}
 zip -q "${ZIP_FILENAME}" -r ${NOTEBOOKS[@]} $(find . -name "*.py") $(find . -name "*.pyx") -x "makepdf.py"
 
 echo -e "### Creating PDFs ###"
-python makepdf.py --notebooks "${NOTEBOOKS[@]}"
+python makepdf.py --notebooks "${NOTEBOOKS[@]}" --pdf_filename "${PDF_FILENAME}"
 
-echo -e "### Done! Please submit a2.zip and the pdfs to Gradescope. ###"
+echo -e "### Done! Please submit ${ZIP_FILENAME} and ${PDF_FILENAME} to Gradescope. ###"
