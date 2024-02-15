@@ -127,9 +127,7 @@ def sgd_nesterov_momentum(w, dw, v, config=None):
 
     return w, config, update_scale / param_scale
 
-# IMPLEMENTME: Implement this function according to the notes
-# cache is a matrix of the same size as w or dw and initialized to 0
-# before the iterative update is employed
+# INTEGRATEME
 def sgd_adagrad(w, dw, config=None):
     """
     Performs stochastic gradient descent with Adagrad parameter update
@@ -153,9 +151,7 @@ def sgd_adagrad(w, dw, config=None):
 
     return w, config,  update_scale / param_scale
 
-# IMPLEMENTME: Implement this function according to the notes
-# cache is a matrix of the same size as w or dw and initialized to 0
-# before the iterative update is employed
+# INTEGRATEME
 def sgd_rmsprop(w, dw, config=None):
     """
     Performs stochastic gradient descent with RMSProp parameter update
@@ -181,9 +177,7 @@ def sgd_rmsprop(w, dw, config=None):
 
     return w, config,  update_scale / param_scale
 
-# IMPLEMENTME: Implement this function according to the notes
-# m and v are matrices of the same size as w or dw and are both
-# initialized to 0 before the iterative update is employed
+# INTEGRATEME
 def sgd_adam(w, dw, t, config=None):
     """
     Performs stochastic gradient descent with Adam parameter update
