@@ -74,8 +74,21 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        for layerIdx in range(1, self.num_layers):
+            weightsId = f"W{layerIdx}"
+            biasId = f"b{layerIdx}"
 
+            if layerIdx == 1:
+                previousLayerSize = input_dim
+            else:
+                previousLayerSize = hidden_dims[layerIdx - 2]
+
+            self.params[weightsId] = np.random.normal(loc=0, scale=weight_scale, size=(previousLayerSize, hidden_dims[layerIdx - 1]))
+            self.params[biasId] = np.random.normal(loc=0, scale=weight_scale, size=(hidden_dims[layerIdx - 1]))
+
+        self.params[f"W{layerIdx + 1}"] = np.random.normal(loc=0, scale=weight_scale, size=(hidden_dims[layerIdx - 1], num_classes))
+        self.params[f"b{layerIdx + 1}"] = np.random.normal(loc=0, scale=weight_scale, size=(num_classes))
+ 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -148,13 +161,26 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # The activations dict holds both output and cache from each of the layer computations
+        activations = {}
+        
+        for layerIdx in range(1, self.num_layers + 1):
+            weightsId = f"W{layerIdx}"
+            biasId = f"b{layerIdx}"
+            
+            if layerIdx == 1:
+                activations[f"layer{layerIdx}"] = affine_relu_forward(x=X, w=self.params[weightsId], b=self.params[biasId])
+            elif layerIdx == self.num_layers:
+                activations[f"layer{layerIdx}"] = affine_forward(x=activations[f"layer{layerIdx - 1}"][0], w=self.params[weightsId], b=self.params[biasId])
+            else:
+                activations[f"layer{layerIdx}"] = affine_relu_forward(x=activations[f"layer{layerIdx - 1}"][0], w=self.params[weightsId], b=self.params[biasId])
+
+        scores = activations[f"layer{self.num_layers}"][0]
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
         # If test mode return early.
         if mode == "test":
             return scores
@@ -175,7 +201,26 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dataLoss, scoresGrads = softmax_loss(x=scores, y=y)
+        
+        regularizationLoss = 0
+        
+        for layerIdx in range(self.num_layers, 0, -1):
+            weightsId = f"W{layerIdx}"
+            biasId = f"b{layerIdx}"
+
+            regularizationLoss += np.sum(self.params[weightsId] ** 2)
+
+            if layerIdx == self.num_layers:
+                grads[f"i{layerIdx}"], grads[weightsId], grads[biasId] = affine_backward(scoresGrads, activations[f"layer{layerIdx}"][1])
+            elif layerIdx == 1:
+                grads[f"i{layerIdx}"], grads[weightsId], grads[biasId] = affine_relu_backward(grads[f"i{layerIdx + 1}"], activations[f"layer1"][1])
+            else:
+                grads[f"i{layerIdx}"], grads[weightsId], grads[biasId] = affine_relu_backward(grads[f"i{layerIdx + 1}"], activations[f"layer{layerIdx}"][1])
+            
+            grads[weightsId] += self.reg * self.params[weightsId]
+
+        loss = dataLoss + 0.5 * self.reg * regularizationLoss
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

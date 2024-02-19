@@ -25,7 +25,8 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    inp = x.reshape(x.shape[0], -1)
+    out = np.dot(inp, w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -57,7 +58,10 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    inp = x.reshape((x.shape[0], -1))
+    dx = np.dot(dout, w.T).reshape(x.shape)
+    dw = np.dot(inp.T, dout)
+    db = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -82,7 +86,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -108,7 +112,8 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = np.copy(dout)
+    dx[x<=0] = 0
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -137,7 +142,15 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_train = x.shape[0]
+    
+    probabilities = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
+    logits = -np.log(probabilities[range(num_train), y])
+    loss = np.sum(logits) / num_train
+
+    dx = probabilities.copy()
+    dx[range(num_train), y] -= 1
+    dx /= num_train
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################

@@ -69,7 +69,8 @@ def sgd_momentum(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    v = config["momentum"] * v - config["learning_rate"] * dw
+    next_w = w + v
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -79,6 +80,27 @@ def sgd_momentum(w, dw, config=None):
 
     return next_w, config
 
+def adagrad(w, dw, config=None):
+  """
+  Uses the AdaGrad update rule, which uses the per-parameter sum of squared
+  gradient values to normalize the update value.
+
+  config format:
+  - cache: Per-parameter sum of squared gradient values
+  """
+
+  if config is None:
+      config = {}
+  config.setdefault("learning_rate", 1e-2)
+  config.setdefault("epsilon", 1e-8)
+  config.setdefault("cache", np.zeros_like(w))
+  
+  next_w = None
+
+  config["cache"] += dw ** 2
+  next_w = w - config["learning_rate"] * dw / np.sqrt(config["cache"] + config["epsilon"])
+
+  return next_w, config
 
 def rmsprop(w, dw, config=None):
     """
@@ -107,7 +129,8 @@ def rmsprop(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    config["cache"] = config["decay_rate"] * config["cache"] + (1 - config["decay_rate"]) * dw ** 2
+    next_w = w - config["learning_rate"] * dw / np.sqrt(config["cache"] + config["epsilon"])
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -152,7 +175,12 @@ def adam(w, dw, config=None):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    config["t"] += 1
+    config["m"] = config["beta1"] * config["m"] + (1 - config["beta1"]) * dw
+    mt = config["m"] / (1 - config["beta1"] ** config["t"])
+    config["v"] = config["beta2"] * config["v"] + (1 - config["beta2"]) * (dw ** 2)
+    vt = config["v"] / (1 - config["beta2"] ** config["t"])
+    next_w = w - config["learning_rate"] * mt / (np.sqrt(vt) + config["epsilon"])
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
