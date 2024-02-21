@@ -229,7 +229,25 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Compute minibatch stats feature-wise
+        minibatch_mean = np.mean(x, axis=0)   # (3,)
+        minibatch_var = np.var(x, axis=0)     # (3,)
+        minibatch_std = np.sqrt(minibatch_var + eps)    #(3,)
+
+        # Center and normalize the minibatch features
+        centered_input = x - minibatch_mean     # (200, 3)
+        inv_std = 1 / minibatch_std     # (3,)
+        normalized_input = centered_input * inv_std   # (200, 3)
+        out = gamma * normalized_input + beta     # (200, 3)
+
+        # Update running average of the minibatch mean and variance
+        running_mean = momentum * running_mean + (1 - momentum) * minibatch_mean
+        running_var = momentum * running_var + (1 - momentum) * minibatch_var
+
+        # Register cache
+        cache = (
+            normalized_input, gamma, centered_input, inv_std, minibatch_std
+        )
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -243,8 +261,9 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # Store the result in the out variable.                               #
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
+        
+        normalized_input = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * normalized_input + beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -285,7 +304,36 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # https://www.adityaagrawal.net/blog/deep_learning/bprop_batch_norm
+
+    normalized_input, gamma, centered_input,\
+    inv_var, minibatch_std = cache
+
+    N, D = dout.shape
+
+    dbeta = np.sum(dout, axis=0)
+    
+    dgamma = np.sum(dout * normalized_input, axis=0)
+    
+    dxhat = dout * gamma
+
+    divar = np.sum(dxhat * centered_input, axis=0)
+    dxmu1 = dxhat * inv_var
+
+    dsqrtvar = -1. / (minibatch_std ** 2) * divar
+
+    dvar = 0.5 * 1. / minibatch_std * dsqrtvar
+
+    dsq = 1. / N * np.ones((N, D)) * dvar
+
+    dxmu2 = 2 * centered_input * dsq
+
+    dx1 = dxmu1 + dxmu2
+    dmu = -1 * np.sum(dx1, axis=0)
+
+    dx2 = 1. / N * np.ones((N, D)) * dmu
+
+    dx = dx1 + dx2
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -319,7 +367,19 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, D = dout.shape
+    
+    normalized_input, gamma, _,\
+    inv_var, _ = cache
+
+    # intermediate partial derivatives
+    dxhat = dout * gamma
+
+    # final partial derivatives
+    dx = (1. / N) * inv_var * (N * dxhat - np.sum(dxhat, axis=0)
+      - normalized_input * np.sum(dxhat * normalized_input, axis=0))
+    dbeta = np.sum(dout, axis=0)
+    dgamma = np.sum(normalized_input * dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
