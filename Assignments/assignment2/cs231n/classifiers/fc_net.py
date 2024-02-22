@@ -5,6 +5,8 @@ import numpy as np
 from ..layers import *
 from ..layer_utils import *
 
+BATCHNORMID = "batchnorm"
+LAYERNORMID = "layernorm"
 
 class FullyConnectedNet(object):
     """Class for a multi-layer fully connected neural network.
@@ -85,10 +87,16 @@ class FullyConnectedNet(object):
 
             self.params[weightsId] = np.random.normal(loc=0, scale=weight_scale, size=(previousLayerSize, hidden_dims[layerIdx - 1]))
             self.params[biasId] = np.random.normal(loc=0, scale=weight_scale, size=(hidden_dims[layerIdx - 1]))
+            
+            if self.normalization == BATCHNORMID:
+                gammaId = f"gamma{layerIdx}"
+                betaId = f"beta{layerIdx}"
+                self.params[gammaId] = np.ones(shape=hidden_dims[layerIdx - 1])
+                self.params[betaId] = np.zeros(shape=hidden_dims[layerIdx - 1])
 
         self.params[f"W{layerIdx + 1}"] = np.random.normal(loc=0, scale=weight_scale, size=(hidden_dims[layerIdx - 1], num_classes))
         self.params[f"b{layerIdx + 1}"] = np.random.normal(loc=0, scale=weight_scale, size=(num_classes))
- 
+
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -109,7 +117,7 @@ class FullyConnectedNet(object):
         # of the first batch normalization layer, self.bn_params[1] to the forward
         # pass of the second batch normalization layer, etc.
         self.bn_params = []
-        if self.normalization == "batchnorm":
+        if self.normalization == BATCHNORMID:
             self.bn_params = [{"mode": "train"} for i in range(self.num_layers - 1)]
         if self.normalization == "layernorm":
             self.bn_params = [{} for i in range(self.num_layers - 1)]
@@ -143,7 +151,7 @@ class FullyConnectedNet(object):
         # behave differently during training and testing.
         if self.use_dropout:
             self.dropout_param["mode"] = mode
-        if self.normalization == "batchnorm":
+        if self.normalization == BATCHNORMID:
             for bn_param in self.bn_params:
                 bn_param["mode"] = mode
         scores = None
@@ -164,16 +172,40 @@ class FullyConnectedNet(object):
         # The activations dict holds both output and cache from each of the layer computations
         activations = {}
         
-        for layerIdx in range(1, self.num_layers + 1):
+        for layerIdx in range(1, self.num_layers):
+            previousLayerId = f"layer{layerIdx - 1}"
+            currentLayerId = f"layer{layerIdx}"
             weightsId = f"W{layerIdx}"
             biasId = f"b{layerIdx}"
-            
+            gammaId = f"gamma{layerIdx}"
+            betaId = f"beta{layerIdx}"
+
             if layerIdx == 1:
-                activations[f"layer{layerIdx}"] = affine_relu_forward(x=X, w=self.params[weightsId], b=self.params[biasId])
-            elif layerIdx == self.num_layers:
-                activations[f"layer{layerIdx}"] = affine_forward(x=activations[f"layer{layerIdx - 1}"][0], w=self.params[weightsId], b=self.params[biasId])
+                layerInput = X
             else:
-                activations[f"layer{layerIdx}"] = affine_relu_forward(x=activations[f"layer{layerIdx - 1}"][0], w=self.params[weightsId], b=self.params[biasId])
+                layerInput = activations[previousLayerId][0]
+
+            if self.normalization == BATCHNORMID:
+                activations[currentLayerId] = affine_batchnorm_relu_forward(
+                        x=layerInput,
+                        w=self.params[weightsId],
+                        b=self.params[biasId],
+                        gamma=self.params[gammaId],
+                        beta=self.params[betaId],
+                        bn_params=self.bn_params[layerIdx - 1]
+                    )
+            else:
+                activations[currentLayerId] = affine_relu_forward(
+                        x=layerInput,
+                        w=self.params[weightsId],
+                        b=self.params[biasId]
+                    )
+        
+        activations[f"layer{self.num_layers}"] = affine_forward(
+            x=activations[f"layer{self.num_layers - 1}"][0],
+            w=self.params[f"W{self.num_layers}"],
+            b=self.params[f"b{self.num_layers}"]
+        )
 
         scores = activations[f"layer{self.num_layers}"][0]
 
@@ -205,18 +237,35 @@ class FullyConnectedNet(object):
         
         regularizationLoss = 0
         
-        for layerIdx in range(self.num_layers, 0, -1):
+        # Backprop last model layer
+        finalLayerWeightsId = f"W{self.num_layers}"
+        finalLayerBiasId = f"b{self.num_layers}"
+
+        regularizationLoss += np.sum(self.params[finalLayerWeightsId] ** 2)
+        inputsGrads, grads[finalLayerWeightsId], grads[finalLayerBiasId] = affine_backward(
+            scoresGrads, activations[f"layer{self.num_layers}"][1]
+        )
+        grads[finalLayerWeightsId] += self.reg * self.params[finalLayerWeightsId]
+
+        # Backprop remaining model layers
+        for layerIdx in range(self.num_layers - 1, 0, -1):
+            currentLayerId = f"layer{layerIdx}"
             weightsId = f"W{layerIdx}"
             biasId = f"b{layerIdx}"
 
             regularizationLoss += np.sum(self.params[weightsId] ** 2)
 
-            if layerIdx == self.num_layers:
-                grads[f"i{layerIdx}"], grads[weightsId], grads[biasId] = affine_backward(scoresGrads, activations[f"layer{layerIdx}"][1])
-            elif layerIdx == 1:
-                grads[f"i{layerIdx}"], grads[weightsId], grads[biasId] = affine_relu_backward(grads[f"i{layerIdx + 1}"], activations[f"layer1"][1])
+            gradientCache = activations[currentLayerId][1]
+
+            if self.normalization == BATCHNORMID:
+                gammaId = f"gamma{layerIdx}"
+                betaId = f"beta{layerIdx}"
+                
+                inputsGrads, grads[weightsId], grads[biasId], grads[gammaId], grads[betaId] = affine_batchnorm_relu_backward(
+                    inputsGrads, gradientCache
+                )
             else:
-                grads[f"i{layerIdx}"], grads[weightsId], grads[biasId] = affine_relu_backward(grads[f"i{layerIdx + 1}"], activations[f"layer{layerIdx}"][1])
+                inputsGrads, grads[weightsId], grads[biasId] = affine_relu_backward(inputsGrads, gradientCache)
             
             grads[weightsId] += self.reg * self.params[weightsId]
 
