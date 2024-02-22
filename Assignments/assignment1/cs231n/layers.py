@@ -190,7 +190,7 @@ def softmax_loss(x, y):
 
     num_train = x.shape[0]
     
-    # x -= np.max(x)    # Subtracting the max value from all entries introduces gradient inaccuracy in this case
+    x -= np.max(x, axis=1, keepdims=True)    # Subtracting the max value from all entries introduces gradient inaccuracy in this case
     probabilities = np.exp(x) / np.sum(np.exp(x), axis=1, keepdims=True)
     logits = -np.log(probabilities[range(num_train), y])
     loss = np.sum(logits) / num_train
