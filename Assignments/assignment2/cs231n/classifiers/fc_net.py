@@ -98,12 +98,12 @@ class FullyConnectedNet(object):
                 self.params[gammaId] = np.ones(shape=hidden_dims[layerIdx - 1])
                 self.params[betaId] = np.zeros(shape=hidden_dims[layerIdx - 1])
 
-        self.params[f"W{layerIdx + 1}"] = np.random.normal(
+        self.params[f"W{self.num_layers}"] = np.random.normal(
             loc=0,
             scale=weight_scale,
-            size=(hidden_dims[layerIdx - 1], num_classes)
+            size=(hidden_dims[self.num_layers - 2], num_classes)
         )
-        self.params[f"b{layerIdx + 1}"] = np.zeros(shape=(num_classes))
+        self.params[f"b{self.num_layers}"] = np.zeros(shape=(num_classes))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
