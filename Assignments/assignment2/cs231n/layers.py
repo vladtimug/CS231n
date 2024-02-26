@@ -231,15 +231,15 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         # Compute minibatch stats feature-wise
-        minibatch_mean = np.mean(x, axis=0)   # (3,)
-        minibatch_var = np.var(x, axis=0)     # (3,)
-        minibatch_std = np.sqrt(minibatch_var + eps)    #(3,)
+        minibatch_mean = np.mean(x, axis=0)
+        minibatch_var = np.var(x, axis=0)
+        minibatch_std = np.sqrt(minibatch_var + eps)
 
         # Center and normalize the minibatch features
-        centered_input = x - minibatch_mean     # (200, 3)
-        inv_std = 1 / minibatch_std     # (3,)
-        normalized_input = centered_input * inv_std   # (200, 3)
-        out = gamma * normalized_input + beta     # (200, 3)
+        centered_input = x - minibatch_mean
+        inv_std = 1 / minibatch_std
+        normalized_input = centered_input * inv_std
+        out = gamma * normalized_input + beta
 
         # Update running average of the minibatch mean and variance
         running_mean = momentum * running_mean + (1 - momentum) * minibatch_mean
@@ -307,8 +307,7 @@ def batchnorm_backward(dout, cache):
 
     # https://www.adityaagrawal.net/blog/deep_learning/bprop_batch_norm
 
-    normalized_input, gamma, centered_input,\
-    inv_var, minibatch_std = cache
+    normalized_input, gamma, centered_input, inv_std, minibatch_std = cache
 
     N, D = dout.shape
 
@@ -319,7 +318,7 @@ def batchnorm_backward(dout, cache):
     dxhat = dout * gamma
 
     divar = np.sum(dxhat * centered_input, axis=0)
-    dxmu1 = dxhat * inv_var
+    dxmu1 = dxhat * inv_std
 
     dsqrtvar = -1. / (minibatch_std ** 2) * divar
 
@@ -370,8 +369,7 @@ def batchnorm_backward_alt(dout, cache):
 
     N, D = dout.shape
     
-    normalized_input, gamma, _,\
-    inv_var, _ = cache
+    normalized_input, gamma, _, inv_var, _ = cache
 
     # intermediate partial derivatives
     dxhat = dout * gamma
@@ -425,8 +423,22 @@ def layernorm_forward(x, gamma, beta, ln_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute stats sample-wise
+    mean = np.mean(x, axis=1).reshape(-1, 1)
+    var = np.var(x, axis=1).reshape(-1, 1)
+    std = np.sqrt(var + eps)
 
+    # Center and normalize the samples
+    centered_input = x - mean
+    inv_std = 1 / std
+    normalized_input = centered_input * inv_std
+    out = gamma * normalized_input + beta
+
+    # Register cache
+    cache = (
+        normalized_input, gamma, centered_input, inv_std, std
+    )
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -459,7 +471,36 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    normalized_input, gamma, centered_input, inv_std, std = cache
+
+    gamma = gamma.T
+
+    N, D = dout.shape
+
+    dbeta = np.sum(dout, axis=0)
+    
+    dgamma = np.sum(dout * normalized_input, axis=0)
+    
+    dxhat = dout * gamma
+
+    divar = np.sum(dxhat * centered_input, axis=1).reshape(-1, 1)
+    
+    dxmu1 = dxhat * inv_std
+
+    dsqrtvar = -1. / (std ** 2) * divar
+
+    dvar = 0.5 * 1. / std * dsqrtvar
+
+    dsq = 1. / D * np.ones((N, D)) * dvar
+
+    dxmu2 = 2 * centered_input * dsq
+
+    dx1 = dxmu1 + dxmu2
+    dmu = -1 * np.sum(dx1, axis=1).reshape(-1, 1)
+
+    dx2 = 1. / D * np.ones((N, D)) * dmu
+
+    dx = dx1 + dx2
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
