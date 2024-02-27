@@ -6,7 +6,7 @@ from ..layers import *
 from ..layer_utils import *
 
 BATCHNORM_ID = "batchnorm"
-LAYERNORMID = "layernorm"
+LAYERNORM_ID = "layernorm"
 
 class FullyConnectedNet(object):
     """Class for a multi-layer fully connected neural network.
@@ -97,6 +97,11 @@ class FullyConnectedNet(object):
                 betaId = f"beta{layerIdx}"
                 self.params[gammaId] = np.ones(shape=hidden_dims[layerIdx - 1])
                 self.params[betaId] = np.zeros(shape=hidden_dims[layerIdx - 1])
+            elif self.normalization == LAYERNORM_ID:
+                gammaId = f"gamma{layerIdx}"
+                betaId = f"beta{layerIdx}"
+                self.params[gammaId] = np.ones(shape=hidden_dims[layerIdx - 1])
+                self.params[betaId] = np.zeros(shape=hidden_dims[layerIdx - 1])
 
         self.params[f"W{self.num_layers}"] = np.random.normal(
             loc=0,
@@ -127,7 +132,7 @@ class FullyConnectedNet(object):
         self.bn_params = []
         if self.normalization == BATCHNORM_ID:
             self.bn_params = [{"mode": "train"} for i in range(self.num_layers - 1)]
-        if self.normalization == "layernorm":
+        if self.normalization == LAYERNORM_ID:
             self.bn_params = [{} for i in range(self.num_layers - 1)]
 
         # Cast all parameters to the correct datatype.
@@ -202,6 +207,15 @@ class FullyConnectedNet(object):
                         beta=self.params[betaId],
                         bn_params=self.bn_params[layerIdx - 1]
                     )
+            elif self.normalization == LAYERNORM_ID:
+                activations[currentLayerId] = affine_layernorm_relu_forward(
+                        x=layerInput,
+                        w=self.params[weightsId],
+                        b=self.params[biasId],
+                        gamma=self.params[gammaId],
+                        beta=self.params[betaId],
+                        ln_params=self.bn_params[layerIdx - 1]
+                    )
             else:
                 activations[currentLayerId] = affine_relu_forward(
                         x=layerInput,
@@ -271,6 +285,14 @@ class FullyConnectedNet(object):
                 
                 inputsGrads, grads[weightsId], grads[biasId],\
                 grads[gammaId], grads[betaId] = affine_batchnorm_relu_backward(
+                    inputsGrads, gradientCache
+                )
+            elif self.normalization == LAYERNORM_ID:
+                gammaId = f"gamma{layerIdx}"
+                betaId = f"beta{layerIdx}"
+                
+                inputsGrads, grads[weightsId], grads[biasId],\
+                grads[gammaId], grads[betaId] = affine_layernorm_relu_backward(
                     inputsGrads, gradientCache
                 )
             else:
