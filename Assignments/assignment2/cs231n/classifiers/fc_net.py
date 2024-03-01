@@ -188,6 +188,8 @@ class FullyConnectedNet(object):
         for layerIdx in range(1, self.num_layers):
             previousLayerId = f"layer{layerIdx - 1}"
             currentLayerId = f"layer{layerIdx}"
+            previousDropoutLayerId = previousLayerId + "_dropout"
+            currentDropoutLayerId = currentLayerId + "_dropout"
             weightsId = f"W{layerIdx}"
             biasId = f"b{layerIdx}"
             gammaId = f"gamma{layerIdx}"
@@ -196,7 +198,11 @@ class FullyConnectedNet(object):
             if layerIdx == 1:
                 layerInput = X
             else:
-                layerInput = activations[previousLayerId][0]
+                if self.use_dropout:
+                    layerId = previousDropoutLayerId
+                else:
+                    layerId = previousLayerId
+                layerInput = activations[layerId][0]
 
             if self.normalization == BATCHNORM_ID:
                 activations[currentLayerId] = affine_batchnorm_relu_forward(
@@ -222,9 +228,20 @@ class FullyConnectedNet(object):
                         w=self.params[weightsId],
                         b=self.params[biasId]
                     )
+            
+            if self.use_dropout:
+                activations[currentDropoutLayerId] = dropout_forward(
+                    x=activations[currentLayerId][0],
+                    dropout_param=self.dropout_param
+                )
         
+        # Compute the class scores in the last model layer
+        layerId = f"layer{self.num_layers - 1}"
+        if self.use_dropout:
+            layerId = layerId + "_dropout"
+
         activations[f"layer{self.num_layers}"] = affine_forward(
-            x=activations[f"layer{self.num_layers - 1}"][0],
+            x=activations[layerId][0],
             w=self.params[f"W{self.num_layers}"],
             b=self.params[f"b{self.num_layers}"]
         )
@@ -255,27 +272,34 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        # Compute loss from class scores and gradients of the loss wrt the class scores
         dataLoss, scoresGrads = softmax_loss(x=scores, y=y)
-        
-        regularizationLoss = 0
-        
-        # Backprop last model layer
+                
+        # Backprop through through last model layer based on loss gradient wrt the class scores
         finalLayerWeightsId = f"W{self.num_layers}"
         finalLayerBiasId = f"b{self.num_layers}"
 
-        regularizationLoss += np.sum(self.params[finalLayerWeightsId] ** 2)
         inputsGrads, grads[finalLayerWeightsId], grads[finalLayerBiasId] = affine_backward(
             scoresGrads, activations[f"layer{self.num_layers}"][1]
         )
         grads[finalLayerWeightsId] += self.reg * self.params[finalLayerWeightsId]
 
+        # Initialize regularization loss
+        regularizationLoss = 0
+        regularizationLoss += np.sum(self.params[finalLayerWeightsId] ** 2)
+
         # Backprop remaining model layers
         for layerIdx in range(self.num_layers - 1, 0, -1):
             currentLayerId = f"layer{layerIdx}"
+            currentDropoutLayerId = currentLayerId + "_dropout"
             weightsId = f"W{layerIdx}"
             biasId = f"b{layerIdx}"
 
             regularizationLoss += np.sum(self.params[weightsId] ** 2)
+
+            if self.use_dropout:
+                gradientCache = activations[currentDropoutLayerId][1]
+                inputsGrads = dropout_backward(inputsGrads, gradientCache)
 
             gradientCache = activations[currentLayerId][1]
 
