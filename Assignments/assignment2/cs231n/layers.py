@@ -632,8 +632,29 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+    F, CC, HH, WW = w.shape
 
+    padded_input = np.pad(
+        array=x,
+        pad_width=((0,0), (0,0), (conv_param["pad"], conv_param["pad"]), (conv_param["pad"], conv_param["pad"])),
+        mode="constant",
+        constant_values=0
+    )
+
+    result_height = int(1 + (H + 2 * conv_param["pad"] - HH) / conv_param["stride"])
+    result_width = int(1 + (W + 2 * conv_param["pad"] - WW) / conv_param["stride"])
+
+    out = np.zeros(shape=(N, F, result_height, result_width))
+
+    for sample_idx in range(N):
+        for filter_idx in range(F):
+            filtr = w[filter_idx, :, :, :]
+            for out_vertical_idx, inp_vertical_idx in enumerate(range(0, H, conv_param["stride"])):
+                for out_horizontal_idx, inp_horizontal_idx in enumerate(range(0, W, conv_param["stride"])):
+                  sample_region = padded_input[sample_idx, :, inp_vertical_idx:inp_vertical_idx + HH, inp_horizontal_idx:inp_horizontal_idx + WW]
+                  out[sample_idx, filter_idx, out_vertical_idx, out_horizontal_idx] = np.sum(sample_region * filtr) + b[filter_idx]
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -660,7 +681,55 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # https://deeplearning.cs.cmu.edu/F21/document/recitation/Recitation5/CNN_Backprop_Recitation_5_F21.pdf
+
+    x, w, b, conv_param = cache
+    pad = conv_param['pad']
+    stride = conv_param['stride']
+    
+    dx = np.zeros_like(x)
+    dw = np.zeros_like(w)
+    db = np.zeros_like(b)
+    
+    N, C, H, W = x.shape
+    F, _, HH, WW = w.shape
+    _, _, H_, W_ = dout.shape
+    
+    # db computed analogous to the bias gradient computed for the FCN case
+    db = np.sum(dout, axis=(0, 2, 3))
+    
+    # dw computed as a convolution of padded input x with filter dout
+    xp = np.pad(x, ((0,), (0,), (pad,), (pad, )), 'constant')
+    
+    for n in range(N):
+        for f in range(F):
+            for i in range(HH):
+                for j in range(WW):
+                    for k in range(H_):
+                        for l in range(W_):
+                            for c in range(C):
+                                dw[f,c,i,j] += xp[n, c, stride*i+k, stride*j+l] * dout[n, f, k, l]
+
+    # dx computed as a convolution of padded input dout with the flipped filter w_
+    doutp = np.pad(dout, ((0,), (0,), (WW-1,), (HH-1,)), 'constant')
+
+    dxp = np.pad(dx, ((0,), (0,), (pad,), (pad,)), 'constant')
+
+    w_ = np.zeros_like(w)
+    for i in range(HH):
+        for j in range(WW):
+            w_[:,:,i,j] = w[:,:,HH-i-1,WW-j-1]
+    
+    for n in range(N):
+        for f in range(F):
+            for i in range(H + 2 * pad):
+                for j in range(W + 2 * pad):
+                    for k in range(HH):
+                        for l in range(WW):
+                            for c in range(C):
+                                dxp[n,c,i,j] += doutp[n, f, i+k, j+l] * w_[f, c, k, l]
+    
+    dx = dxp[:,:,pad:-pad,pad:-pad]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
