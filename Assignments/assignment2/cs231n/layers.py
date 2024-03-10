@@ -764,8 +764,25 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+    stride = pool_param["stride"]
+    pool_height = pool_param["pool_height"]
+    pool_width = pool_param["pool_width"]
 
+    H_ = int(1 + (H - pool_height) / stride)
+    W_ = int(1 + (W - pool_width) / stride)
+    out = np.zeros((N, C, H_, W_))
+
+    for sample_idx in range(N):
+        for channel_idx in range(C):
+            for out_vertical_idx, inp_vertical_idx in enumerate(range(0, H, stride)):
+                for out_horizontal_idx, inp_horizontal_idx in enumerate(range(0, W, stride)):
+                    out[sample_idx, channel_idx, out_vertical_idx, out_horizontal_idx] = np.max(
+                        x[sample_idx, channel_idx,
+                          inp_vertical_idx:inp_vertical_idx + pool_height,
+                          inp_horizontal_idx : inp_horizontal_idx + pool_width
+                          ])
+                    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -790,7 +807,31 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, pool_param = cache
+
+    N, C, H, W = x.shape
+    stride = pool_param["stride"]
+    pool_height = pool_param["pool_height"]
+    pool_width = pool_param["pool_width"]
+
+    dx = np.zeros_like(x)
+
+    for sample_idx in range(N):
+        for channel_idx in range(C):
+            for out_vertical_idx, inp_vertical_idx in enumerate(range(0, H, stride)):
+                for out_horizontal_idx, inp_horizontal_idx in enumerate(range(0, W, stride)):
+                    receptive_field = x[sample_idx, channel_idx,
+                          inp_vertical_idx : inp_vertical_idx + pool_height,
+                          inp_horizontal_idx : inp_horizontal_idx + pool_width
+                        ]
+                    max_vertical_idx, max_horizontal_idx = np.unravel_index(
+                        np.argmax(receptive_field), receptive_field.shape
+                      )
+                    max_vertical_idx += inp_vertical_idx
+                    max_horizontal_idx += inp_horizontal_idx
+                    dx[sample_idx, channel_idx, max_vertical_idx, max_horizontal_idx] = dout[
+                        sample_idx, channel_idx, out_vertical_idx, out_horizontal_idx
+                      ]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
