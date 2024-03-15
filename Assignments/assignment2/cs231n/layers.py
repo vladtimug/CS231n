@@ -682,6 +682,7 @@ def conv_backward_naive(dout, cache):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     # https://deeplearning.cs.cmu.edu/F21/document/recitation/Recitation5/CNN_Backprop_Recitation_5_F21.pdf
+    # https://deeplearning.cs.cmu.edu/F20/document/slides/lec11.CNN.pdf - slide 30 onwards
 
     x, w, b, conv_param = cache
     pad = conv_param['pad']
@@ -691,44 +692,35 @@ def conv_backward_naive(dout, cache):
     dw = np.zeros_like(w)
     db = np.zeros_like(b)
     
-    N, C, H, W = x.shape
-    F, _, HH, WW = w.shape
-    _, _, H_, W_ = dout.shape
+    samples_number, sample_channels, _, _ = x.shape
+    filters_number, _, filter_height, filter_width = w.shape
+    _, _, upstream_gradient_height, upstream_gradient_width = dout.shape
     
     # db computed analogous to the bias gradient computed for the FCN case
-    db = np.sum(dout, axis=(0, 2, 3))
+    for f in range(filters_number):
+        db[f] = np.sum(dout[:, f, :, :])
     
-    # dw computed as a convolution of padded input x with filter dout
-    xp = np.pad(x, ((0,), (0,), (pad,), (pad, )), 'constant')
-    
-    for n in range(N):
-        for f in range(F):
-            for i in range(HH):
-                for j in range(WW):
-                    for k in range(H_):
-                        for l in range(W_):
-                            for c in range(C):
-                                dw[f,c,i,j] += xp[n, c, stride*i+k, stride*j+l] * dout[n, f, k, l]
+    xp = np.pad(x, ((0,0), (0,0), (pad,pad), (pad,pad)), 'constant')
+    dxp = np.pad(dx, ((0,0), (0,0), (pad,pad), (pad,pad)), 'constant')
 
-    # dx computed as a convolution of padded input dout with the flipped filter w_
-    doutp = np.pad(dout, ((0,), (0,), (WW-1,), (HH-1,)), 'constant')
+    # compute dx and dw
+    for sample_idx in range(samples_number):
+        for filter_idx in range(filters_number):
+            for hw in range(upstream_gradient_height):
+                start_h = stride * hw
+                end_h = start_h + filter_height
+                for ww in range(upstream_gradient_width):
+                    start_w = stride * ww
+                    end_w = start_w + filter_width
+                    for channel_idx in range(sample_channels):
+                        upstream_gradient_value = dout[sample_idx, filter_idx, hw, ww]
+                        dxp[
+                            sample_idx, channel_idx, start_h:end_h, start_w:end_w
+                          ] += upstream_gradient_value * w[filter_idx, channel_idx, :, :]
+                        dw[
+                            filter_idx, channel_idx, :, :
+                          ] += upstream_gradient_value * xp[sample_idx, channel_idx, start_h:end_h, start_w:end_w]
 
-    dxp = np.pad(dx, ((0,), (0,), (pad,), (pad,)), 'constant')
-
-    w_ = np.zeros_like(w)
-    for i in range(HH):
-        for j in range(WW):
-            w_[:,:,i,j] = w[:,:,HH-i-1,WW-j-1]
-    
-    for n in range(N):
-        for f in range(F):
-            for i in range(H + 2 * pad):
-                for j in range(W + 2 * pad):
-                    for k in range(HH):
-                        for l in range(WW):
-                            for c in range(C):
-                                dxp[n,c,i,j] += doutp[n, f, i+k, j+l] * w_[f, c, k, l]
-    
     dx = dxp[:,:,pad:-pad,pad:-pad]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
