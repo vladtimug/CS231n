@@ -864,7 +864,16 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+
+    out = np.zeros_like(x)
+    cache = [0] * C
+    for channel_idx in range(C):
+        stacked_channels = np.vstack(x[:, channel_idx, :, :])
+        out_ch, cache[channel_idx] = batchnorm_forward(x=stacked_channels, gamma=gamma[channel_idx], beta=beta[channel_idx], bn_param=bn_param)
+        out_ch = out_ch.reshape(N, H, W)
+        for sample_idx in range(N):
+            out[sample_idx, channel_idx, :, :] = out_ch[sample_idx]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -897,7 +906,19 @@ def spatial_batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = dout.shape
+    dx = np.zeros_like(dout)
+    dgamma = np.zeros(shape=C)
+    dbeta = np.zeros(shape=C)
+
+    for channel_idx in range(C):
+        stacked_channels = np.vstack(dout[:, channel_idx, :, :])
+        dx_ch, dgamma_ch, dbeta_ch = batchnorm_backward(stacked_channels, cache[channel_idx])
+        dx_ch = dx_ch.reshape(N, H, W)
+        dgamma[channel_idx] = np.sum(dgamma_ch)
+        dbeta[channel_idx] = np.sum(dbeta_ch)
+        for sample_idx in range(N):
+            dx[sample_idx, channel_idx, :, :] = dx_ch[sample_idx]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
