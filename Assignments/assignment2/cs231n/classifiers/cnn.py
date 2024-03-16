@@ -63,7 +63,31 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.params["b1"] = np.zeros(shape=num_filters)
+        self.params["W1"] = np.random.normal(
+            loc=0.0,
+            scale=weight_scale,
+            size=(num_filters, input_dim[0], filter_size, filter_size)
+            )
+
+        axis1_size = 1 + (input_dim[1] - 2) // 2
+        axis2_size = 1 + (input_dim[2] - 2) // 2
+        assert axis1_size == axis2_size, f"Unexpected spatial size of conv layer output.\
+            Axis 1 has size {axis1_size}. Axis 2 has size {axis2_size}."
+
+        self.params["b2"] = np.zeros(shape=hidden_dim)
+        self.params["W2"] = np.random.normal(
+            loc=0.0,
+            scale=weight_scale,
+            size=(num_filters * axis1_size * axis2_size, hidden_dim)
+            )
+
+        self.params["b3"] = np.zeros(shape=num_classes)
+        self.params["W3"] = np.random.normal(
+            loc=0.0,
+            scale=weight_scale,
+            size=(hidden_dim, num_classes)
+            )
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -102,7 +126,9 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        l1_out, l1_cache = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
+        l2_out, l2_cache = affine_relu_forward(l1_out, W2, b2)
+        scores, l3_cache = affine_forward(l2_out, W3, b3)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -125,7 +151,19 @@ class ThreeLayerConvNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        
+        reg_loss = np.sum(self.params["W1"] ** 2) + np.sum(self.params["W2"] ** 2) + np.sum(self.params["W3"] ** 2)
+        loss += 0.5 * self.reg * reg_loss
+
+        dinput_l3, grads["W3"], grads["b3"] = affine_backward(dscores, l3_cache)
+        grads["W3"] += self.reg * W3
+
+        dinput_l2, grads["W2"], grads["b2"] = affine_relu_backward(dinput_l3, l2_cache)
+        grads["W2"] += self.reg * W2
+        
+        dinput_l1, grads["W1"], grads["b1"] = conv_relu_pool_backward(dinput_l2, l1_cache)
+        grads["W1"] += self.reg * W1
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
