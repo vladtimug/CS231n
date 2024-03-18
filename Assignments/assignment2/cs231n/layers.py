@@ -496,6 +496,7 @@ def layernorm_backward(dout, cache):
     dxmu2 = 2 * centered_input * dsq
 
     dx1 = dxmu1 + dxmu2
+    
     dmu = -1 * np.sum(dx1, axis=1).reshape(-1, 1)
 
     dx2 = 1. / D * np.ones((N, D)) * dmu
@@ -959,7 +960,26 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+
+    x = np.reshape(x, (N, G, C // G, H, W))
+    
+    # Compute stats channel-wise
+    mean = np.mean(x, axis=(2, 3, 4), keepdims=True)
+    var = np.var(x, axis=(2, 3, 4), keepdims=True)
+    std = np.sqrt(var + eps)
+
+    # Center and normalize channels
+    centered_input = x - mean
+    inv_std = 1 / std
+    normalized_input = centered_input * inv_std
+    normalized_input = np.reshape(a=normalized_input, newshape=(N, C, H, W))
+    out = gamma * normalized_input + beta
+
+    # Register cache
+    cache = (
+        normalized_input, gamma, centered_input, inv_std, std, G
+    )
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -988,7 +1008,42 @@ def spatial_groupnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = dout.shape
+    normalized_input, gamma, centered_input, inv_std, std, G = cache
+
+    dbeta = np.zeros(shape=(1, C, 1, 1))
+    dgamma = np.zeros(shape=(1, C, 1, 1))
+    dx = np.zeros(shape=(N, C, H, W))
+
+    dgamma_full = dout * normalized_input
+    for c in range(C):
+        dbeta[:,c,:,:] = np.sum(dout[:, c, :, :])
+        dgamma[:,c,:,:] = np.sum(dgamma_full[:, c, :, :])
+
+    dxhat = dout * gamma
+    dxhat = dxhat.reshape(N, G, C // G, H, W)
+
+    divar = np.sum(dxhat * centered_input, axis=(2, 3, 4)).reshape(std.shape)
+    
+    dxmu1 = dxhat * inv_std
+    
+    dsqrtvar = -1 / (std**2) * divar
+    
+    dvar = 0.5 * 1 / std * dsqrtvar
+
+    D = H * W * (C // G)
+    dsq = 1. / D * np.ones(shape=(N, G, C // G, H, W)) * dvar
+    
+    dxmu2 = 2 * centered_input * dsq
+    
+    dx1 = dxmu1 + dxmu2 
+
+    dmu = -1 * np.sum(dx1, axis = (2, 3, 4)).reshape(std.shape)
+    
+    dx2 = 1. / D * np.ones(shape=(N, G, C // G, H, W)) * dmu
+    
+    dx = dx1 + dx2
+    dx = dx.reshape(N, C, H, W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
