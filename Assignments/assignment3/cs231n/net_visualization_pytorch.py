@@ -89,8 +89,22 @@ def make_fooling_image(X, target_y, model):
     # You can print your progress over iterations to check your algorithm.       #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    model.eval()
+    TRAINING_STEPS = 100
+    for step in range(TRAINING_STEPS):
+        scores = model(X_fooling).squeeze()
+        print(f"{step}/{TRAINING_STEPS}, predicted class: {scores.argmax()}")
+        
+        correct_class_score = scores[target_y]
+        correct_class_score.backward()
 
-    pass
+        dx = learning_rate * X_fooling.grad / X_fooling.grad.square().sum().sqrt()
+        
+        X_fooling.data += dx
+        X_fooling.grad.zero_()
+
+        if scores.argmax() == target_y:
+            break
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
