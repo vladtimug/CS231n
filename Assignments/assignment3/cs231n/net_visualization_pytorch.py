@@ -34,8 +34,22 @@ def compute_saliency_maps(X, y, model):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Perform forward pass and extract corerct class score for each sample
+    scores = model(X)
+    correct_class_scores = scores.gather(1, y.view(-1, 1)).squeeze()
 
+    # Compute loss and gradient of the unnormalized score corresponding to the
+    # correct class with respect to the input image using the bacward pass
+    loss = correct_class_scores.sum()
+    loss.backward()
+    
+    # Alternatively this could have been computed using the correct_class_scores
+    # tensor directly and avoid the loss computation like so:
+    # correct_class_scores.backward(torch.ones(y.shape[0]))
+
+    # Compute saliency maps as indicated in the paper
+    saliency = torch.max(torch.abs(X.grad), dim=1).values
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                             END OF YOUR CODE                               #
