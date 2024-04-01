@@ -122,7 +122,13 @@ def class_visualization_update_step(img, model, target_y, l2_reg, learning_rate)
     ########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    model.eval()
+    scores = model(img).squeeze()
+    correct_class_score = scores[target_y]
+    loss = correct_class_score - l2_reg * img.data.square().sum().sqrt()
+    loss.backward()
+    img.data += learning_rate * img.grad / img.grad.norm()
+    img.grad.zero_()
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ########################################################################
