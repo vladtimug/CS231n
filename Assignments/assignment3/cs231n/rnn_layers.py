@@ -151,9 +151,19 @@ def rnn_forward(x, h0, Wx, Wh, b):
     # above. You can use a for loop to help compute the forward pass.            #
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    
+    h = [h0]
+    cache = []
+    
+    # Forward data for time step t from all sequences in the minibatch as input to the RNN block
+    for t in range(x.shape[1]):
+        state_t, cache_t = rnn_step_forward(x=x[:, t], prev_h=h[t], Wx=Wx, Wh=Wh, b=b)
+        h.append(state_t)
+        cache.append(cache_t)
+    
+    # Stack all newly computed hidden states to group together outputs for the same time step for all sequences
+    h = np.stack(h[1:], axis=1)
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -187,7 +197,22 @@ def rnn_backward(dh, cache):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    if len(cache) != dh.shape[1]:
+        raise AssertionError(
+            "Unexpected to encounter forward pass time dimension different than backward pass time dimenssion"
+        )
+    
+    dx = [0] * dh.shape[1]
+    dh_t, dh0, dWx, dWh, db = 0, 0, 0, 0, 0
+    
+    for t in range(dh.shape[1] - 1, -1, -1):
+        dx_t, dh_t, dWx_t, dWh_t, db_t = rnn_step_backward(dnext_h=dh[:, t] + dh_t, cache=cache[t])
+        dx[t] = dx_t
+        dWx += dWx_t
+        dWh += dWh_t
+        db += db_t
+    dh0 = dh_t
+    dx = np.stack(dx, axis=1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
