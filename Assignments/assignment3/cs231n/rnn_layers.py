@@ -73,8 +73,11 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
-
+    prev_state = prev_h.dot(Wh)
+    weighted_input = x.dot(Wx)
+    next_h = np.tanh(prev_state + weighted_input + b)
+    cache = (x, prev_h, Wx, Wh, next_h)
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -105,7 +108,16 @@ def rnn_step_backward(dnext_h, cache):
     ##############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, prev_h, Wx, Wh, next_h = cache
+    
+    # Gradient wrt tanh of shape (N, H)
+    dtanh = (1 - next_h ** 2) * dnext_h
+
+    db = np.sum(dtanh, axis=0)
+    dprev_h = dtanh.dot(Wh.T)
+    dWh = prev_h.T.dot(dtanh)
+    dx = dtanh.dot(Wx.T)
+    dWx = x.T.dot(dtanh)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
