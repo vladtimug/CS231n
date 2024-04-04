@@ -284,9 +284,9 @@ def word_embedding_backward(dout, cache):
     dW = np.zeros_like(W)
 
     # Forward and add all gradients based on the indexing used to select word embeddings
-    # values in x specift indices in 'a'
-    # values' indices in x specify indices in 'b'.
-    np.add.at(a=dW, indices=x, b=dout)
+    # values in function argument 'x' specify indices in 'a' function argument
+    # values' indices in function argument 'x' specify indices in 'b' function argument.
+    np.add.at(dW, x, dout)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
