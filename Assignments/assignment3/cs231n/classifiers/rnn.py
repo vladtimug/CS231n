@@ -148,7 +148,18 @@ class CaptioningRNN:
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # Forward pass
+        initial_hidden_state, initial_hidden_state_cache = affine_forward(x=features, w=W_proj, b=b_proj) # (1)
+        word_embeddings, word_embeddings_cache = word_embedding_forward(x=captions_in, W=W_embed)  # (2)
+        hidden_states, hidden_states_cache = rnn_forward(x=word_embeddings, h0=initial_hidden_state, Wx=Wx, Wh=Wh, b=b)  # (3)
+        vocab_scores, vocab_scores_cache = temporal_affine_forward(x=hidden_states, w=W_vocab, b=b_vocab)   # (4)
+        loss, loss_grads = temporal_softmax_loss(x=vocab_scores, y=captions_out, mask=mask)  # (5)
+
+        # Backward pass
+        dscores, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dout=loss_grads, cache=vocab_scores_cache)   # (4)
+        dhidden_states, dinital_hidden_state, grads["Wx"], grads["Wh"], grads["b"] = rnn_backward(dh=dscores, cache=hidden_states_cache)   # (3)
+        grads["W_embed"] = word_embedding_backward(dout=dhidden_states, cache=word_embeddings_cache)   # (2)
+        _, grads["W_proj"], grads["b_proj"] = affine_backward(dout=dinital_hidden_state, cache=initial_hidden_state_cache)   # (1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
