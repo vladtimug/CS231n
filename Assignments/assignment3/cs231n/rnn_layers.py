@@ -441,7 +441,16 @@ def lstm_forward(x, h0, Wx, Wh, b):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    h = [h0]
+    cache = []
+    prev_c = np.zeros_like(h0)
+    
+    for t in range(x.shape[1]):
+        h_t, prev_c, cache_t = lstm_step_forward(x[:, t], h[-1], prev_c, Wx, Wh, b)
+        h.append(h_t)
+        cache.append(cache_t)
+
+    h = np.stack(h[1:], axis=1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
@@ -472,7 +481,23 @@ def lstm_backward(dh, cache):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Get the shape values and initialize gradients
+    (N, T, H), (D, H4) = dh.shape, cache[0][8].shape
+    dx = np.empty((N, T, D))
+    dh0 = np.zeros((N, H))
+    dc0 = np.zeros((N, H))
+    dWx = np.zeros((D, H4))
+    dWh = np.zeros((H, H4))
+    db = np.zeros(H4)
+    
+    for t in range(T-1, -1, -1):
+        # Run backward pass for t^th timestep and update the gradient matrices
+        dx_t, dh0, dc0, dWx_t, dWh_t, db_t = lstm_step_backward(dh0 + dh[:, t], dc0, cache[t])
+        dx[:, t] = dx_t
+        dWx += dWx_t
+        dWh += dWh_t
+        db += db_t
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
