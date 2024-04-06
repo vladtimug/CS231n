@@ -149,18 +149,27 @@ class CaptioningRNN:
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         if self.cell_type == "rnn":
-          # Forward pass
-          initial_hidden_state, initial_hidden_state_cache = affine_forward(x=features, w=W_proj, b=b_proj) # (1)
-          word_embeddings, word_embeddings_cache = word_embedding_forward(x=captions_in, W=W_embed)  # (2)
-          hidden_states, hidden_states_cache = rnn_forward(x=word_embeddings, h0=initial_hidden_state, Wx=Wx, Wh=Wh, b=b)  # (3)
-          vocab_scores, vocab_scores_cache = temporal_affine_forward(x=hidden_states, w=W_vocab, b=b_vocab)   # (4)
-          loss, loss_grads = temporal_softmax_loss(x=vocab_scores, y=captions_out, mask=mask)  # (5)
+            recurrent_forward = rnn_forward
+            recurrent_backward = rnn_backward
+        elif self.cell_type == "lstm":
+            recurrent_forward = lstm_forward
+            recurrent_backward = lstm_backward
+        else:
+            raise ValueError(f"Found invalid cell type: {self.cell_type}")
 
-          # Backward pass
-          dscores, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dout=loss_grads, cache=vocab_scores_cache)   # (4)
-          dhidden_states, dinital_hidden_state, grads["Wx"], grads["Wh"], grads["b"] = rnn_backward(dh=dscores, cache=hidden_states_cache)   # (3)
-          grads["W_embed"] = word_embedding_backward(dout=dhidden_states, cache=word_embeddings_cache)   # (2)
-          _, grads["W_proj"], grads["b_proj"] = affine_backward(dout=dinital_hidden_state, cache=initial_hidden_state_cache)   # (1)
+        # Forward pass
+        initial_hidden_state, initial_hidden_state_cache = affine_forward(x=features, w=W_proj, b=b_proj) # (1)
+        word_embeddings, word_embeddings_cache = word_embedding_forward(x=captions_in, W=W_embed)  # (2)
+        hidden_states, hidden_states_cache = recurrent_forward(x=word_embeddings, h0=initial_hidden_state, Wx=Wx, Wh=Wh, b=b)  # (3)
+        vocab_scores, vocab_scores_cache = temporal_affine_forward(x=hidden_states, w=W_vocab, b=b_vocab)   # (4)
+        
+        loss, loss_grads = temporal_softmax_loss(x=vocab_scores, y=captions_out, mask=mask)  # (5)
+
+        # Backward pass
+        dscores, grads["W_vocab"], grads["b_vocab"] = temporal_affine_backward(dout=loss_grads, cache=vocab_scores_cache)   # (4)
+        dhidden_states, dinital_hidden_state, grads["Wx"], grads["Wh"], grads["b"] = recurrent_backward(dh=dscores, cache=hidden_states_cache)   # (3)
+        grads["W_embed"] = word_embedding_backward(dout=dhidden_states, cache=word_embeddings_cache)   # (2)
+        _, grads["W_proj"], grads["b_proj"] = affine_backward(dout=dinital_hidden_state, cache=initial_hidden_state_cache)   # (1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -230,13 +239,21 @@ class CaptioningRNN:
 
         words = np.repeat(self._start, N)
         hidden_state, _ = affine_forward(x=features, w=W_proj, b=b_proj)
+        cell_state = np.zeros_like(hidden_state)
 
         for t in range(max_length):
             word_embeddings, _ = word_embedding_forward(x=words, W=W_embed)
-            hidden_state, _ = rnn_step_forward(x=word_embeddings, prev_h=hidden_state, Wx=Wx, Wh=Wh, b=b)
+
+            if self.cell_type == "rnn":
+              hidden_state, _ = rnn_step_forward(x=word_embeddings, prev_h=hidden_state, Wx=Wx, Wh=Wh, b=b)
+            elif self.cell_type == "lstm":
+              hidden_state, cell_state, _ = lstm_step_forward(x=word_embeddings, prev_h=hidden_state, prev_c=cell_state, Wx=Wx, Wh=Wh, b=b)
+            else:
+              raise ValueError(f"Found invalid cell type: {self.cell_type}")
+            
             word_scores, _ = affine_forward(x=hidden_state, w=W_vocab, b=b_vocab)
-            max_scores = np.argmax(word_scores, axis=1)
-            captions[:, t] = max_scores
+            words = np.argmax(word_scores, axis=1)
+            captions[:, t] = words
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
