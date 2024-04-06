@@ -335,8 +335,21 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Compute the activation vector and split to 4 gates
+    i, f, o, g = np.hsplit(x @ Wx + prev_h @ Wh + b, 4)
 
+    # Compute gate vals
+    i = sigmoid(i)
+    f = sigmoid(f)
+    o = sigmoid(o)
+    g = np.tanh(g)
+
+    # Compute next cell state and next hidden state
+    next_c = f * prev_c + i * g
+    next_h = o * np.tanh(next_c)
+
+    cache = (prev_h, prev_c, next_c, i, f, o, g, x, Wx, Wh)
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
     #                               END OF YOUR CODE                             #
@@ -370,7 +383,26 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # Retrieve elements from cache
+    prev_h, prev_c, next_c, i, f, o, g, x, Wx, Wh = cache
+
+    # Compute full partial derivative of dnext_c and dprev_c
+    dnext_c += dnext_h * o * (1 - np.square(np.tanh(next_c)))
+    dprev_c = dnext_c * f
+
+    # Partial derivatives w.r.t. a
+    da0 = dnext_c * g * i * (1 - i)
+    da1 = dnext_c * prev_c * f * (1 - f)
+    da2 = dnext_h * np.tanh(next_c) * o * (1 - o)
+    da3 = dnext_c * i * (1 - np.square(g))
+    da = np.hstack((da0, da1, da2, da3))
+
+    # Derivatives wrt primary values
+    dx = da @ Wx.T
+    dprev_h = da @ Wh.T
+    dWx = x.T @ da
+    dWh = prev_h.T @ da
+    db = da.sum(axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ##############################################################################
