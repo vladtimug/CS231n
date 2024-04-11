@@ -38,7 +38,10 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        pos = torch.arange(0, max_len).reshape(max_len, 1)
+        t = torch.pow(torch.tensor([1e-4]), torch.arange(0, embed_dim, 2) / embed_dim)
+        pe[:, :, 0::2] = torch.sin(pos * t)
+        pe[:, :, 1::2] = torch.cos(pos * t)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -70,7 +73,8 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        output = x + self.pe[:, :S, :]
+        output = self.dropout(output)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -165,7 +169,31 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        H = self.n_head
+
+        # Linear mapping
+        query = self.query(query).reshape(N, S, H, E // H).transpose(2, 1)  # (N, H, S, E//H)
+        key = self.key(key).reshape(N, T, H, E // H).transpose(2, 1)        # (N, H, T, E//H)
+        value = self.value(value).reshape(N, T, H, E // H).transpose(2, 1)  # (N, H, T, E//H)
+
+        # print(f"Q: {query.shape}")
+        # print(f"K: {key.shape}")
+        # print(f"V: {value.shape}")
+
+        # Alignment
+        x = torch.matmul(query, key.transpose(3, 2)) / math.sqrt(self.head_dim)  # (N, H, S, T)
+        # print(f"X: {x.shape}")
+        if attn_mask is not None:
+            # print(f"M: {attn_mask.shape}")
+            x = x.masked_fill(attn_mask == 0, -float("inf"))
+        
+        # Attention
+        attention_map = self.attn_drop(F.softmax(x, dim=-1))
+        attention = torch.matmul(attention_map, value)   # (N, H, S, E//H)
+        # print(f"A: {attention.shape}")
+
+        output = self.proj(attention.transpose(2, 1).reshape(N, S, H * E // H))
+        # print(f"output: {output.shape}")
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
