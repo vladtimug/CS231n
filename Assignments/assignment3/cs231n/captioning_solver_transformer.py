@@ -36,7 +36,7 @@ class CaptioningSolverTransformer(object):
     API:
 
       Inputs:
-      - features: Array giving a minibatch of features for images, of shape (N, D
+      - features: Array giving a minibatch of features for images, of shape (N, D)
       - captions: Array of captions for those images, of shape (N, T) where
         each element is in the range (0, V].
 
