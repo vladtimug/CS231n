@@ -169,6 +169,9 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+        # Implement the attention forumla A = (QK^T / sqrt(d_k/h) * V)
+        # Note that multiple attention heads are to be computed in parallel
+
         H = self.n_head
 
         # Linear mapping
@@ -176,24 +179,16 @@ class MultiHeadAttention(nn.Module):
         key = self.key(key).reshape(N, T, H, E // H).transpose(2, 1)        # (N, H, T, E//H)
         value = self.value(value).reshape(N, T, H, E // H).transpose(2, 1)  # (N, H, T, E//H)
 
-        # print(f"Q: {query.shape}")
-        # print(f"K: {key.shape}")
-        # print(f"V: {value.shape}")
-
         # Alignment
         x = torch.matmul(query, key.transpose(3, 2)) / math.sqrt(self.head_dim)  # (N, H, S, T)
-        # print(f"X: {x.shape}")
         if attn_mask is not None:
-            # print(f"M: {attn_mask.shape}")
             x = x.masked_fill(attn_mask == 0, -float("inf"))
-        
+
         # Attention
         attention_map = self.attn_drop(F.softmax(x, dim=-1))
         attention = torch.matmul(attention_map, value)   # (N, H, S, E//H)
-        # print(f"A: {attention.shape}")
 
         output = self.proj(attention.transpose(2, 1).reshape(N, S, H * E // H))
-        # print(f"output: {output.shape}")
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
