@@ -188,7 +188,7 @@ class MultiHeadAttention(nn.Module):
         attention_map = self.attn_drop(F.softmax(x, dim=-1))
         attention = torch.matmul(attention_map, value)   # (N, H, S, E//H)
 
-        output = self.proj(attention.transpose(2, 1).reshape(N, S, H * E // H))
+        output = self.proj(attention.transpose(2, 1).reshape(N, S, E))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
