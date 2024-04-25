@@ -1,2 +1,5 @@
 **/__pycache__/
 *.npz
+**/datasets/**
+**/data/**
+**/pretrained_model/**
