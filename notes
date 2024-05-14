@@ -92,7 +92,7 @@ http://cs231n.github.io/python-numpy-tutorial/
 				- Use CIFAR10
 
 				Parametric approach: 
-					1. Build a function f that takes in the image as 	X and a set of weights W - F(X,w) that spits 	out 10 numbers giving class scores about whats	 in the picture where the highest scores 			represents	 the highes probability of a 		correct prediction
+					1. Build a function f that takes in the image as X and a set of weights W - F(X,w) that spits out 10 numbers giving class scores about whats in the picture where the highest scores represents	the highes probability of a correct prediction
 							f(x,W) = W * x + 
 
 https://cs231n.github.io/assignments2017/assignment1/
